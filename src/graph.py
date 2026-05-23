@@ -5,7 +5,7 @@ import src.settings as settings
 
 
 def draw_axes(ctx, program):
-    """Draw the x and y axes."""
+    """Draw the x and y coordinate axes."""
 
     origin_x_ndc = settings.to_ndc_x(0)
     origin_y_ndc = settings.to_ndc_y(0)
@@ -54,16 +54,19 @@ def draw_graph(ctx, program, func, graph_samples):
 
     delta_x = x_end - x_start
     delta_y = y_end - y_start
-    slopes  = delta_y / delta_x
-    
-    # Use a threshold to remove large changes in slope
-    # (e.g. infinite discontinuities)
-    # Note: bugs may occur as the system cannot detect some cases
-    # (e.g. jump discontinuities)
-    threshold = 1 / delta_x
+    # Calculate the slope of each line segment,
+    # handling cases where delta_x is zero to avoid division by zero
+    slopes  = np.divide(
+        delta_y,
+        delta_x,
+        out=np.full_like(delta_y, np.nan),
+        where=delta_x != 0)
 
-    # Mask out segments where the slope is too large (discontinuities)
-    mask = (slopes < threshold)
+    # Use a threshold to remove large changes in slope
+    # (e.g. infinite discontinuities and invalid values)
+    threshold = 1.0 / np.abs(delta_x)
+    valid = np.isfinite(x_start) & np.isfinite(x_end) & np.isfinite(y_start) & np.isfinite(y_end)
+    mask = valid & np.isfinite(slopes) & (np.abs(slopes) < threshold)
     graph = graph[mask]
     graph = np.real(graph)
 

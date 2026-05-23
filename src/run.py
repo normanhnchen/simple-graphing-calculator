@@ -204,33 +204,35 @@ def make_function(user_input):
     num_func = sp.lambdify(x, expr, modules=["numpy"])
 
     def func(x):
-        # Set x to dtype "complex" to prevent complex value errors
-        x = np.array(x, dtype=complex)
+        # Use float inputs so invalid real-domain values become NaN.
+        x = np.array(x, dtype=float)
 
         # Ignore all math errors to prevent errors from stopping the program
-        # Discard invalid values later
+        # Discard invalid or complex values later.
         with np.errstate(all="ignore"):
             res = num_func(x)
-            # Check if the original number was negative and complex
-            # If the number was negative and complex, get the negative magnitude of the complex number
-            # Otherwise, get the real number
-            res = np.where(np.iscomplex(res) & (np.real(x) < 0), -np.abs(res), np.real(res))
-            # Return the invalid values as NaN to prevent drawing on screen
-            res = np.where(np.isreal(res), np.real(res), np.nan)
-            
+            if np.iscomplexobj(res):
+                res = np.where(np.isreal(res), np.real(res), np.nan)
+            else:
+                res = np.where(np.isfinite(res), res, np.nan)
+
             return res
-            
+
     return func
 
 
 def print_syntax_help():
     print(
         "\n--- Function Syntax ---\n"
-        "Use variable: x\n"
-        "Operators: +, -, *, /, **\n"
-        "Functions: sin, cos, tan, sqrt, ln, log, exp\n"
-        "Constants: pi, e\n"
-        "Example: sin(10*x) + sqrt(x**2) - tan(1/x)\n"
+        "This calculator uses SymPy expression syntax.\n"
+        "Use the variable: x\n"
+        "Operators: +, -, *, /, **, unary -\n"
+        "Functions: sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, exp, log, sqrt, abs\n"
+        "Constants: pi, E\n"
+        "Examples: sin(10*x), sqrt(x**2), log(x), exp(-x**2)\n"
+        "You can use any SymPy-parsable expression.\n"
+        "For complete syntax and advanced features, see SymPy parser docs:\n"
+        "https://docs.sympy.org/latest/modules/parsing.html\n"
     )
 
 
