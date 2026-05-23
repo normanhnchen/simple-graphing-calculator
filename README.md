@@ -94,3 +94,23 @@ Then enter a mathematical function when prompted.
 
 - Using sympy to parse user math syntax
 - Working with numpy to resolve issues involving complex and invalid numbers
+
+## Example Images
+
+```
+(1/10)*(x**2-4*x+3)*exp(sin(x))+log(x**2+1)*cos(2*x)-sqrt(abs(x-pi))+atan(x)*sin(3*x)
+```
+
+![Example 1](images/image1.png)
+
+```
+sin(x)*cos(x**2)+log(x**2+1)-sqrt(abs(x))+x/(x**2+1)
+```
+
+![Example 2](images/image2.png)
+
+```
+(x**2-4*x+3)*exp(sin(x))+log(x**2+1)*cos(2*x)-sqrt(abs(x-pi))+atan(x)*sin(3*x)
+```
+
+![Example 3](images/image3.png)

@@ -230,7 +230,7 @@ def print_syntax_help():
         "Functions: sin, cos, tan, asin, acos, atan, sinh, cosh, tanh, exp, log, sqrt, abs\n"
         "Constants: pi, E\n"
         "Examples: sin(10*x), sqrt(x**2), log(x), exp(-x**2)\n"
-        "You can use any SymPy-parsable expression.\n"
+        "You can use any SymPy-parsable expression which can be evaluated.\n"
         "For complete syntax and advanced features, see SymPy parser docs:\n"
         "https://docs.sympy.org/latest/modules/parsing.html\n"
     )
