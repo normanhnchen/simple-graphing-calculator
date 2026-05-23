@@ -2,6 +2,7 @@ import pygame
 import moderngl
 import os
 import sympy as sp
+import numpy as np
 
 import src.settings as settings
 from src.graph import *
@@ -10,6 +11,8 @@ from src.calc import *
 
 
 def init_window():
+    """Initialize the window and OpenGL context."""
+
     global ctx, program
 
     pygame.init()
@@ -20,7 +23,6 @@ def init_window():
 
     ctx = moderngl.create_context()
     ctx.viewport = (0, 0, settings.resolution[0], settings.resolution[1])
-    ctx.enable(moderngl.LINEAR_MIPMAP_LINEAR)
     # Allow for transparency
     ctx.enable(moderngl.BLEND)
 
@@ -35,26 +37,20 @@ def init_window():
 
 
 def run():
+    """Main loop of the program. Handles events and drawing on screen."""
+
     global ctx, program
     global integration_samples
     global lower_bound, upper_bound
 
     clock = pygame.time.Clock()
-    FPS = 60
 
-    # Type of integration estimation method drawn
-    # (LRAM, RRAM, MRAM, TRAP)
-    integration_type = "LRAM"
-    # Number of samples used for integration under the graph
-    integration_samples = 8192
-    # Number of samples used to draw the graph
-    # Note: There is no option to change this during runtime
-    graph_samples = 8192
-    # Default bounds of integration
-    lower_bound = -5
-    upper_bound = 5
-    # How fast the bounds expand/shrink/shifts when pressing associated keys during runtime
-    bound_exp_factor = 0.5
+    integration_type = settings.DEFAULT_INTEGRATION_TYPE
+    integration_samples = settings.DEFAULT_INTEGRATION_SAMPLES
+    graph_samples = settings.GRAPH_SAMPLES
+    lower_bound = settings.DEFAULT_LOWER_BOUND
+    upper_bound = settings.DEFAULT_UPPER_BOUND
+    bound_exp_factor = settings.BOUND_EXP_FACTOR
     
     # Clear the console
     os.system("cls" if os.name == "nt" else "clear")
@@ -65,7 +61,7 @@ def run():
 
     while running:
         # Set FPS
-        clock.tick(FPS)
+        clock.tick(settings.FPS)
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -104,20 +100,23 @@ def run():
                 elif event.key == pygame.K_r:
                     default_settings()
             
+            # Zoom in/out with mouse wheel, centered on the mouse position
             elif event.type == pygame.MOUSEWHEEL:
-                # Zoom in
-                if event.y > 0:
-                    settings.x_min /= 1.1
-                    settings.x_max /= 1.1
-                    settings.y_min /= 1.1
-                    settings.y_max /= 1.1
-                
-                # Zoom out
-                elif event.y < 0:
-                    settings.x_min *= 1.1
-                    settings.x_max *= 1.1
-                    settings.y_min *= 1.1
-                    settings.y_max *= 1.1
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                current_width = settings.x_max - settings.x_min
+                current_height = settings.y_max - settings.y_min
+
+                world_x = settings.x_min + (mouse_x / settings.resolution[0]) * current_width
+                world_y = settings.y_max - (mouse_y / settings.resolution[1]) * current_height
+
+                # Zoom in/out depending if the mouse wheel is scrolled up or down
+                scale = 1 / 1.1 if event.y > 0 else 1.1
+
+                # Set new bounds
+                settings.x_min = world_x - (world_x - settings.x_min) * scale
+                settings.x_max = world_x + (settings.x_max - world_x) * scale
+                settings.y_min = world_y - (world_y - settings.y_min) * scale
+                settings.y_max = world_y + (settings.y_max - world_y) * scale
                 
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # Left click
@@ -145,7 +144,7 @@ def run():
 
         # Clip the integration samples to bounds
         # (to prevent issues and to prevent lagging out)
-        integration_samples = max(1, min(integration_samples, 262144))
+        integration_samples = max(settings.MIN_INTEGRATION_SAMPLES, min(integration_samples, settings.MAX_INTEGRATION_SAMPLES))
         
         ctx.clear(1.0, 1.0, 1.0)
 
@@ -173,10 +172,15 @@ def run():
 
 
 def input_func():
+    """
+    Get user input for the function to be graphed on screen.
+    Print syntax help if the user types "help".
+    """
+
     while True:
         print(
             "\nPlease print a function to be drawn on screen.\n"
-            "Print \"help\" for function syntax help/rules."
+            "Print \"help\" for function syntax help/rules.\n"
         )
         user_input = input()
 
@@ -188,6 +192,11 @@ def input_func():
 
 
 def make_function(user_input):
+    """
+    Convert the user input string into a function
+    that can be evaluated without errors.
+    """
+
     x = sp.Symbol("x")
 
     expr = sp.parse_expr(user_input)
@@ -225,7 +234,6 @@ def print_syntax_help():
     )
 
 
-
 def print_controls():
     print(
         "--- Controls ---\n"
@@ -234,17 +242,18 @@ def print_controls():
         "Press 3: Draw Midpoint Riemann Approximation\n"
         "Press 4: Draw Trapezoidal Approximation\n"
         "Press [: Decrease Integration Samples by a factor of 2\n"
-        "Press ]: Increase Integration Samples by a factor 2\n"
+        "Press ]: Increase Integration Samples by a factor of 2\n"
         "Press o: Print the integration approximations\n"
         "Press ←: Shift integration bounds left\n"
         "Press →: Shift integration bounds right\n"
-        "Press ↓: Shift the upper integration bound left\n"
-        "Press ↑: Shift the upper integration bound right\n"
+        "Press ↓: Shift the upper integration bound down\n"
+        "Press ↑: Shift the upper integration bound up\n"
         "Press r: Reset settings to its default values"
     )
 
 
 def print_integrals():
+    """Calculate and print the integration approximations to the console."""
     global lower_bound, upper_bound, integration_samples
 
     lram = LRAM(lower_bound, upper_bound, func, integration_samples)
@@ -262,20 +271,24 @@ def print_integrals():
 
 
 def default_settings():
+    """Reset settings to its default values."""
+
     global lower_bound, upper_bound
 
-    settings.window_scale = 10
+    settings.window_scale = settings.DEFAULT_WINDOW_SCALE
 
-    settings.x_min = -settings.window_scale
-    settings.x_max =  settings.window_scale
-    settings.y_min = -settings.window_scale
-    settings.y_max =  settings.window_scale
+    settings.x_min = settings.DEFAULT_X_MIN * settings.window_scale
+    settings.x_max = settings.DEFAULT_X_MAX * settings.window_scale
+    settings.y_min = settings.DEFAULT_Y_MIN * settings.window_scale
+    settings.y_max = settings.DEFAULT_Y_MAX * settings.window_scale
 
-    lower_bound = -5
-    upper_bound =  5
+    lower_bound = settings.DEFAULT_LOWER_BOUND
+    upper_bound = settings.DEFAULT_UPPER_BOUND
 
 
 def main():
+    """Main function to run the program."""
+
     global func
 
     func = make_function(input_func())

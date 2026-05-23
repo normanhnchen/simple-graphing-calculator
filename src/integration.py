@@ -4,6 +4,8 @@ import src.settings as settings
 
 
 def draw_LRAM(ctx, program, func, integration_samples, lower_bound, upper_bound):
+    """Left Riemann Sum: evaluate at the start of the interval."""
+
     dx = (upper_bound - lower_bound) / integration_samples
 
     x_starts = np.linspace(lower_bound, upper_bound - dx, integration_samples)
@@ -38,6 +40,8 @@ def draw_LRAM(ctx, program, func, integration_samples, lower_bound, upper_bound)
 
 
 def draw_RRAM(ctx, program, func, integration_samples, lower_bound, upper_bound):
+    """Right Riemann Sum: evaluate at the end of the interval."""
+
     dx = (upper_bound - lower_bound) / integration_samples
 
     x_starts = np.linspace(lower_bound, upper_bound - dx, integration_samples)
@@ -72,6 +76,8 @@ def draw_RRAM(ctx, program, func, integration_samples, lower_bound, upper_bound)
 
 
 def draw_MRAM(ctx, program, func, integration_samples, lower_bound, upper_bound):
+    """Midpoint Riemann Sum: evaluate at the middle of the interval."""
+
     dx = (upper_bound - lower_bound) / integration_samples
 
     x_starts = np.linspace(lower_bound, upper_bound - dx, integration_samples)
@@ -107,6 +113,11 @@ def draw_MRAM(ctx, program, func, integration_samples, lower_bound, upper_bound)
 
 
 def draw_TRAP(ctx, program, func, integration_samples, lower_bound, upper_bound):
+    """
+    Trapezoidal Rule: evaluate at both the start and end of the interval,
+    then average the results.
+    """
+
     dx = (upper_bound - lower_bound) / integration_samples
 
     x_starts = np.linspace(lower_bound, upper_bound - dx, integration_samples)

@@ -5,6 +5,8 @@ import src.settings as settings
 
 
 def draw_axes(ctx, program):
+    """Draw the x and y axes."""
+
     origin_x_ndc = settings.to_ndc_x(0)
     origin_y_ndc = settings.to_ndc_y(0)
 
@@ -31,6 +33,8 @@ def draw_axes(ctx, program):
 
 
 def draw_graph(ctx, program, func, graph_samples):
+    """Draw the graph of the function by sampling points and connecting them with lines."""
+
     x_vals = np.linspace(settings.x_min, settings.x_max, graph_samples)
     y_vals = func(x_vals)
 
@@ -38,10 +42,10 @@ def draw_graph(ctx, program, func, graph_samples):
     y_vals_ndc = settings.to_ndc_y(y_vals)
 
     x_start = x_vals_ndc[:-1]
-    x_end = x_vals_ndc[1:]
+    x_end   = x_vals_ndc[1:]
 
     y_start = y_vals_ndc[:-1]
-    y_end = y_vals_ndc[1:]
+    y_end   = y_vals_ndc[1:]
 
     graph = np.column_stack([
         x_start, y_start,
@@ -49,8 +53,8 @@ def draw_graph(ctx, program, func, graph_samples):
     ])
 
     delta_x = x_end - x_start
-    delta_y = np.abs(y_end - y_start)
-    slopes = delta_y / delta_x
+    delta_y = y_end - y_start
+    slopes  = delta_y / delta_x
     
     # Use a threshold to remove large changes in slope
     # (e.g. infinite discontinuities)
@@ -58,6 +62,7 @@ def draw_graph(ctx, program, func, graph_samples):
     # (e.g. jump discontinuities)
     threshold = 1 / delta_x
 
+    # Mask out segments where the slope is too large (discontinuities)
     mask = (slopes < threshold)
     graph = graph[mask]
     graph = np.real(graph)
